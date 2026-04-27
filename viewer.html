@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>XML to HTML Viewer (XSLT) – Outcome 3</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-left: 5px solid red; }
+        button, select { margin: 10px 5px; padding: 6px 12px; cursor: pointer; }
+        #output { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>XSLT Transformation Viewer – Guided Learning Records</h2>
+    <div>
+        <label for="xslSelect">Choose XSLT style sheet: </label>
+        <select id="xslSelect">
+            <option value="https://yhy0527.github.io/ra/style1.xsl">Version 1 (basic)</option>
+            <option value="style2.xsl">Version 2 (modular)</option>
+            <option value="style3.xsl">Version 3 (advanced)</option>
+        </select>
+        <button id="loadBtn">Load and Transform</button>
+    </div>
+    <div id="output">Click the button to load learning_records.xml and apply XSLT.</div>
+
+    <script>
+        (function() {
+            const xmlUrl = 'https://yhy0527.github.io/ra/learning_records.xml';
+            const xslSelect = document.getElementById('xslSelect');
+            const loadBtn = document.getElementById('loadBtn');
+            const outputDiv = document.getElementById('output');
+
+            async function loadXML(url) {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const text = await response.text();
+                return new DOMParser().parseFromString(text, 'application/xml');
+            }
+
+            async function transform() {
+                outputDiv.innerHTML = '<em>Loading and transforming...</em>';
+                try {
+                    const xslFile = xslSelect.value;
+                    const [xmlDoc, xslDoc] = await Promise.all([
+                        loadXML(xmlUrl),
+                        loadXML(xslFile)
+                    ]);
+
+                    const parseError = xmlDoc.querySelector('parsererror');
+                    if (parseError) throw new Error('XML parsing error: ' + parseError.textContent);
+
+                    const xsltProcessor = new XSLTProcessor();
+                    xsltProcessor.importStylesheet(xslDoc);
+                    const resultDoc = xsltProcessor.transformToFragment(xmlDoc, document);
+                    outputDiv.innerHTML = '';
+                    outputDiv.appendChild(resultDoc);
+                } catch (err) {
+                    outputDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${err.message}</div>`;
+                }
+            }
+
+            loadBtn.addEventListener('click', transform);
+        })();
+    </script>
+</body>
+</html>
